@@ -72,7 +72,7 @@
 
   - name: Ensure /var/www/html has correct permissions
     acl:
-      path: /var/www/html
+      path: /var/www/
       entity: www-data
       etype: user
       permissions: rwx
@@ -97,7 +97,7 @@
 
   - name: Clone the code repository to the docroot.
     git:
-      repo: https://github.com/NipunRamani99/planetchili-pantrio.git
+      repo: https://github.com/alexjiang200407/my-hub.git
       accept_hostkey: yes
       dest: /var/www/html/myhub
       update: no

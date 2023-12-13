@@ -6,6 +6,7 @@ sudo pip3 install --upgrade pip
 pip3 install "ansible==2.9.17"
 pip3 install ansible[azure]
 sudo apt install ansible -y
+sudo apt-get install -y acl
 
 # Install dependencies for ansible
 ansible-galaxy collection install community.general
