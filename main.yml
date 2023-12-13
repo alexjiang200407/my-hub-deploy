@@ -1,0 +1,182 @@
+---
+- hosts: all
+  name: myHub server
+  gather_facts: yes
+  become: true
+
+  tasks:
+  - name: Add repository for PHP versions (Ubuntu).
+    apt_repository: repo='ppa:ondrej/php'
+      
+  - name: Install PHP
+    apt:
+      name:
+        - php8.3
+        - php8.3-fpm
+        - php8.3-common
+        - php8.3-zip
+        - php8.3-curl
+        - php8.3-xml
+        - php8.3-ldap
+        - php8.3-imap
+        - php8.3-mbstring
+        - php8.3-mysql
+        - php8.3-pdo
+        - php8.3-intl
+        - php8.3-cli
+        - php8.3-bcmath
+        - php8.3-opcache
+        - php8.3-pgsql
+        - php8.3-pdo
+        - php8.3-redis
+        - php-xdebug
+      state: present
+
+  - name: Configure PHP (FPM)
+    copy:
+      src: ./assets/php-fpm.ini
+      dest: /etc/php/8.3/fpm/php.ini
+
+  - name: Install composer
+    include_role:
+      name: composer
+
+  - name: Install node
+    include_role:
+      name: node
+
+  - name: Install Redis
+    apt:
+      name: redis
+      state: present
+
+  - name: Install Supervisor
+    apt:
+      name: supervisor
+      state: present
+
+  - name: Install Mysql
+    include_role:
+      name: mysql
+
+  - name: Install nginx
+    include_role:
+      name: nginx
+
+  - name: Create /var/www/html directory
+    file:
+      path: /var/www/html
+      state: directory
+      owner: www-data
+      group: www-data
+
+  - name: Ensure /var/www/html has correct permissions
+    acl:
+      path: /var/www/html
+      entity: www-data
+      etype: user
+      permissions: rwx
+      recursive: true
+      state: present
+
+  - name: Create /var/tmp directory
+    file:
+      path: /var/tmp
+      state: directory
+      owner: www-data
+      group: www-data
+
+  - name: Ensure /var/tmp has correct permissions
+    acl:
+      path: /var/www/html
+      entity: www-data
+      etype: user
+      permissions: rwx
+      recursive: true
+      state: present
+
+  - name: Clone the code repository to the docroot.
+    git:
+      repo: https://github.com/NipunRamani99/planetchili-pantrio.git
+      accept_hostkey: yes
+      dest: /var/www/html/myhub
+      update: no
+      force: yes
+      version: main
+    become: yes
+
+  - name: Install composer packages
+    community.general.composer:
+      command: install
+      no_dev: no
+      working_dir: /var/www/html/myhub
+    become: yes
+    become_user: www-data
+
+  - name: Copy app env
+    copy:
+      src: /var/www/html/myhub/.env.example
+      dest: /var/www/html/myhub/.env
+    become: true
+
+  - name: generate laravel key
+    shell: php artisan key:generate
+    args:
+      chdir: /var/www/html/myhub
+    become: true
+
+  - name: cache configuration
+    shell: php artisan config:cache
+    args:
+      chdir: /var/www/html/myhub
+    become: true
+
+  # - name: link laravel storage
+  #   shell: php artisan storage:link
+  #   args:
+  #     chdir: /var/www/html/myhub
+
+  # - name: Laravel migrate
+  #   shell: php artisan migrate:fresh --seed
+  #   args:
+  #     chdir: /var/www/html/myhub
+  #   become: true
+
+###  - name: run webpack
+###    shell: npm run build
+###    args:
+###      chdir: /var/www/html/ravel
+
+  - name: convenient link from dev user home to site directory
+    file:
+      src: /var/www/html/myhub
+      dest: /home/azureuser/myhub
+      state: link
+
+
+  - name: Give user permissions
+    acl:
+      path: /var/www/html/myhub
+      entity: azureuser
+      etype: user
+      permissions: rwx
+      state: present
+
+
+  - name: Install npm packages
+    community.general.npm:
+      path: /var/www/html/myhub
+      no_bin_links: true
+    become: true
+
+  - name: add laravel artisan alias
+    lineinfile:
+      dest: ~/.bashrc
+      line: "alias art='php artisan'"
+      owner: azureuser
+
+#supervisord master config + horizon/larasock
+
+# figure out
+#   requirements.yml ansible-galaxy collection loading vagrant.ansible_local
+#   could just run ansible-galaxy collection install -r requirements.yml in a separate ansible playbook

@@ -1,0 +1,31 @@
+---
+- name: Install Mysql
+  apt:
+    name: mysql-server
+    state: present
+
+- name: Make sure pymysql is installed
+  apt:
+    name: python3-pymysql
+    state: present
+
+- name: Create a new database with name {app_name}
+  community.mysql.mysql_db:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: myhub
+    state: present
+
+- name: Removes all anonymous user accounts
+  community.mysql.mysql_user:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: ''
+    host_all: yes
+    state: absent
+
+- name: Create database user with name {app_name} and password {password} with all database privileges on {app_name}
+  community.mysql.mysql_user:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: myhub
+    password: secret
+    priv: "myhub.*:ALL"
+    state: present

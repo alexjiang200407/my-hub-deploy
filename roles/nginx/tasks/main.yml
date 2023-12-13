@@ -1,0 +1,37 @@
+
+---
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: copy nginx config for myhub
+  copy:
+    src: ./assets/myhub.nginx
+    dest: /etc/nginx/sites-available/myhub.nginx
+
+- name: Create symbolic link for myhub enable
+  file:
+    src: /etc/nginx/sites-available/myhub.nginx
+    dest: /etc/nginx/sites-enabled/myhub
+    state: link
+
+- name: Remove default site config
+  file:
+    path: /etc/nginx/sites-available/default
+    state: absent
+
+- name: Remove default site enable link
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Remove default test page
+  file:
+    path: /var/www/html/index.nginx-debian.html
+    state: absent
+
+- name: Reload service nginx
+  service:
+    name: nginx
+    state: reloaded
