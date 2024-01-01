@@ -4,7 +4,7 @@ server {
 
     root /var/www/html/myhub/public;
 
-    server_name myhub.io;
+    server_name myhub.my.to;
 
     charset utf-8;
 
